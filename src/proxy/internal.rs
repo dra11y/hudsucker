@@ -16,6 +16,8 @@ use hyper_util::{
     rt::{TokioExecutor, TokioIo},
     server,
 };
+#[cfg(feature = "request-id")]
+use rand::Rng;
 use std::{convert::Infallible, future::Future, net::SocketAddr, sync::Arc};
 use tokio::{io::AsyncReadExt, net::TcpStream, task::JoinHandle};
 use tokio_rustls::TlsAcceptor;
@@ -78,6 +80,12 @@ where
     fn context(&self) -> HttpContext {
         HttpContext {
             client_addr: self.client_addr,
+            #[cfg(feature = "request-id")]
+            request_id: rand::thread_rng()
+                .sample_iter(&rand::distributions::Alphanumeric)
+                .take(32)
+                .map(char::from)
+                .collect(),
         }
     }
 
@@ -107,7 +115,7 @@ where
         };
 
         if req.method() == Method::CONNECT {
-            Ok(self.process_connect(req))
+            Ok(self.process_connect(req, &ctx))
         } else if hyper_tungstenite::is_upgrade_request(&req) {
             Ok(self.upgrade_websocket(req))
         } else {
@@ -132,7 +140,8 @@ where
         }
     }
 
-    fn process_connect(mut self, mut req: Request<Body>) -> Response<Body> {
+    fn process_connect(mut self, mut req: Request<Body>, ctx: &HttpContext) -> Response<Body> {
+        let ctx = ctx.clone();
         match req.uri().authority().cloned() {
             Some(authority) => {
                 let span = info_span!("process_connect");
@@ -154,11 +163,7 @@ where
                                 Bytes::copy_from_slice(buffer[..bytes_read].as_ref()),
                             );
 
-                            if self
-                                .http_handler
-                                .should_intercept(&self.context(), &req)
-                                .await
-                            {
+                            if self.http_handler.should_intercept(&ctx, &req).await {
                                 if buffer == *b"GET " {
                                     if let Err(e) = self
                                         .serve_stream(
@@ -480,7 +485,13 @@ mod tests {
                 .body(Body::empty())
                 .unwrap();
 
-            let res = proxy.process_connect(req);
+            let ctx = HttpContext {
+                client_addr: SocketAddr::from(([127, 0, 0, 1], 8080)),
+                #[cfg(feature = "request-id")]
+                request_id: String::new(),
+            };
+
+            let res = proxy.process_connect(req, &ctx);
 
             assert_eq!(res.status(), StatusCode::BAD_REQUEST)
         }

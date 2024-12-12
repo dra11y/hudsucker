@@ -15,6 +15,7 @@
 //! - `openssl-ca`: Enables [`OpensslAuthority`](certificate_authority::OpensslAuthority).
 //! - `rcgen-ca`: Enables [`RcgenAuthority`](certificate_authority::RcgenAuthority) (enabled by default).
 //! - `rustls-client`: Enables [`ProxyBuilder::with_rustls_client`](builder::ProxyBuilder::with_rustls_client) (enabled by default).
+//! - `request-id`: Enables random generated (using `rand` crate) [`HttpContext.request_id`] (enabled by default).
 
 mod body;
 #[cfg(feature = "decoder")]
@@ -76,6 +77,8 @@ impl From<Response<Body>> for RequestOrResponse {
 pub struct HttpContext {
     /// Address of the client that is sending the request.
     pub client_addr: SocketAddr,
+    #[cfg(feature = "request-id")]
+    pub request_id: String,
 }
 
 /// Context for websocket messages.

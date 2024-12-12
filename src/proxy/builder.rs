@@ -3,10 +3,7 @@ use crate::{
     WebSocketHandler,
 };
 use hyper_util::{
-    client::legacy::{
-        connect::{Connect, HttpConnector},
-        Client,
-    },
+    client::legacy::{connect::Connect, Client},
     rt::TokioExecutor,
     server::conn::auto::Builder,
 };

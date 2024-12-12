@@ -55,13 +55,14 @@ x509-parser = "0.16.0"
 
 [features]
 decoder = ["dep:async-compression", "dep:tokio-util", "tokio/io-util"]
-default = ["decoder", "rcgen-ca", "rustls-client"]
-full = ["decoder", "http2", "native-tls-client", "openssl-ca", "rcgen-ca", "rustls-client"]
+default = ["decoder", "rcgen-ca", "rustls-client", "request-id"]
+full = ["decoder", "http2", "native-tls-client", "openssl-ca", "rcgen-ca", "rustls-client", "request-id"]
 http2 = ["hyper-util/http2", "hyper-rustls?/http2"]
 native-tls-client = ["dep:hyper-tls", "dep:tokio-native-tls", "tokio-tungstenite/native-tls"]
 openssl-ca = ["dep:openssl", "dep:moka"]
 rcgen-ca = ["dep:rcgen", "dep:moka", "dep:time", "dep:rand"]
 rustls-client = ["dep:hyper-rustls", "tokio-tungstenite/rustls-tls-webpki-roots"]
+request-id = ["dep:rand"]
 
 [[example]]
 name = "log"
